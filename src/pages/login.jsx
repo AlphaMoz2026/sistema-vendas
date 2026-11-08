@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { authClient } from '../lib/auth-client';
-import { sql } from '../lib/db';
 import { useNavigate } from 'react-router-dom';
 
 export default function Login() {
@@ -9,76 +8,70 @@ export default function Login() {
     const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
 
+    // --- FUNÇÃO DE LOGIN ---
     const handleLogin = async (e) => {
         e.preventDefault();
         setLoading(true);
+
         try {
-            // 1. Verifica se é um email ou um número de celular
+            // Formata o celular se não tiver @
             const loginFormatado = email.includes('@')
                 ? email
                 : `${email.replace(/\s+/g, '')}@sistema.com`;
 
-            // 2. Faz o login no Neon Auth
             const { data, error } = await authClient.signIn.email({
                 email: loginFormatado,
-                password
+                password: password,
             });
 
-            if (error) throw error;
-
-            // 3. Vai buscar o 'role' (cargo) à tabela de perfis
-            let userRole = 'cashier';
-            try {
-                const perfil = await sql`SELECT role FROM profiles WHERE id = ${data.user.id}`;
-                if (perfil.length > 0) {
-                    userRole = perfil[0].role;
-                }
-            } catch (dbError) {
-                console.warn("Aviso: Não foi possível ler o role da base de dados.", dbError);
-            }
-
-            // 4. Redireciona consoante o cargo
-            if (userRole === 'supervisor' || userRole === 'admin' || loginFormatado === 'alphadigitalofficialmoz@gmail.com') {
-                navigate('/admin');
+            if (error) {
+                alert("Erro ao entrar: " + error.message);
             } else {
-                navigate('/pos');
+                // Redireciona para o painel administrativo
+                navigate('/admin');
             }
-
-        } catch (error) {
-            alert("Erro ao entrar: " + error.message);
+        } catch (err) {
+            alert("Erro inesperado no login: " + err.message);
         } finally {
             setLoading(false);
         }
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-gray-900">
-            <div className="bg-white p-8 rounded-xl shadow-2xl w-full max-w-md">
-                <h2 className="text-3xl font-bold text-center text-gray-800 mb-6">SISTEMA</h2>
+        <div className="min-h-screen flex items-center justify-center bg-gray-900 p-4">
+            <div className="bg-white p-8 rounded-lg shadow-lg w-full max-w-md">
+                <h1 className="text-2xl font-bold text-center text-gray-800 mb-6">SISTEMA</h1>
+
                 <form onSubmit={handleLogin} className="space-y-4">
                     <div>
                         <label className="block text-sm font-medium text-gray-700">Email ou Celular</label>
                         <input
                             type="text"
-                            required
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
                             placeholder="Ex: 841234567 ou o seu email"
-                            className="mt-1 w-full p-2 border rounded-md focus:ring-2 focus:ring-blue-500 outline-none"
+                            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-gray-900"
+                            required
                         />
                     </div>
+
                     <div>
                         <label className="block text-sm font-medium text-gray-700">Senha</label>
                         <input
                             type="password"
-                            required
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
                             placeholder="A sua senha"
-                            className="mt-1 w-full p-2 border rounded-md focus:ring-2 focus:ring-blue-500 outline-none"
+                            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-gray-900"
+                            required
                         />
                     </div>
-                    <button type="submit" disabled={loading} className="w-full bg-blue-600 text-white p-3 rounded-md font-bold hover:bg-blue-700 transition">
+
+                    <button
+                        type="submit"
+                        disabled={loading}
+                        className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none disabled:bg-blue-400"
+                    >
                         {loading ? 'A entrar...' : 'Entrar'}
                     </button>
                 </form>

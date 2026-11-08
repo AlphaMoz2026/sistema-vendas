@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { authClient } from '../lib/auth-client';
 import { useNavigate } from 'react-router-dom';
+import { jwtDecode } from 'jwt-decode';
 
 export default function Login() {
     const [email, setEmail] = useState('');
@@ -8,13 +9,11 @@ export default function Login() {
     const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
 
-    // --- FUNÇÃO DE LOGIN ---
     const handleLogin = async (e) => {
         e.preventDefault();
         setLoading(true);
 
         try {
-            // Formata o celular se não tiver @
             const loginFormatado = email.includes('@')
                 ? email
                 : `${email.replace(/\s+/g, '')}@sistema.com`;
@@ -27,8 +26,35 @@ export default function Login() {
             if (error) {
                 alert("Erro ao entrar: " + error.message);
             } else {
-                // Redireciona para o painel administrativo
-                navigate('/admin');
+                let isAdmin = false;
+
+                try {
+                    // Tenta pegar o token de autenticação gerado pelo Neon
+                    const token = data?.token || localStorage.getItem('token');
+
+                    if (token) {
+                        const decoded = jwtDecode(token);
+                        // Verifica se o cargo é admin ou supervisor
+                        const role = decoded.role || decoded.user_metadata?.role;
+                        if (role === 'admin' || role === 'supervisor') {
+                            isAdmin = true;
+                        }
+                    } else {
+                        // Se não achar o token, mas o email for o do admin, libera o acesso
+                        if (loginFormatado === 'admin1@alphadigitalmoz.com' || loginFormatado === 'alphadigitaloficialmoz@gmail.com') {
+                            isAdmin = true;
+                        }
+                    }
+                } catch (decodeError) {
+                    console.error("Erro ao ler o cargo do usuário:", decodeError);
+                }
+
+                // Redireciona com base no cargo
+                if (isAdmin) {
+                    navigate('/admin');
+                } else {
+                    navigate('/pos'); // Manda o caixa para a frente de vendas
+                }
             }
         } catch (err) {
             alert("Erro inesperado no login: " + err.message);

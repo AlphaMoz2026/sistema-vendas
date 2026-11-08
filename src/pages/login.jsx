@@ -4,18 +4,6 @@ import { sql } from '../lib/db';
 import { useNavigate } from 'react-router-dom';
 
 export default function Login() {
-    // --- FUNÇÃO TEMPORÁRIA PARA CRIAR O ADMIN ---
-    const criarAdmin = async () => {
-        const { data, error } = await authClient.signUp.email({
-            email: 'alphadigitalofficialmoz@gmail.com',
-            password: 'admin1234', // A senha que quer usar
-            name: 'Augusto Simone',
-        });
-        if (error) alert("Erro ao criar: " + error.message);
-        else alert("Admin criado com sucesso! Já pode fazer login.");
-    };
-    // ------------------------------------------
-
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [loading, setLoading] = useState(false);
@@ -93,16 +81,6 @@ export default function Login() {
                     <button type="submit" disabled={loading} className="w-full bg-blue-600 text-white p-3 rounded-md font-bold hover:bg-blue-700 transition">
                         {loading ? 'A entrar...' : 'Entrar'}
                     </button>
-
-                    {/* BOTÃO TEMPORÁRIO - APAGAR DEPOIS DE USAR */}
-                    <button
-                        type="button"
-                        onClick={criarAdmin}
-                        className="w-full mt-2 bg-gray-200 text-gray-700 p-2 rounded text-sm font-semibold hover:bg-gray-300 transition"
-                    >
-                        [TEMPORÁRIO] Criar Conta Admin
-                    </button>
-
                 </form>
             </div>
         </div>

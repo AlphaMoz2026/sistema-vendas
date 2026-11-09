@@ -12,24 +12,23 @@ import Caixas from './pages/Caixas';
 import AdminLayout from './pages/AdminLayout';
 import CashGive from './pages/CashGive';
 
-// --- BARREIRA DE SEGURANÇA (SÓ DEIXA PASSAR SUPERVISOR/ADMIN) ---
+// --- BARREIRA DE SEGURANÇA ---
 const RotaProtegidaAdmin = ({ children }) => {
-  const { role, loading } = useAuth();
+  const { user, loading } = useAuth();
 
-  // Enquanto o sistema verifica o login, não mostra nada (ou um loading)
-  if (loading) {
-    return <div className="min-h-screen flex items-center justify-center">A verificar permissões...</div>;
-  }
+  if (loading) return <div className="min-h-screen flex items-center justify-center">A verificar...</div>;
 
-  // Se for supervisor, admin ou manager, deixa entrar no painel
-  if (role === 'supervisor' || role === 'admin' || role === 'manager') {
+  // Se o utilizador estiver logado e o e-mail NÃO for do tipo caixa (@sistema.com), é admin.
+  const isSupervisor = user?.email && !user.email.includes('@sistema.com');
+
+  if (isSupervisor) {
     return children;
   }
 
-  // Se for 'cashier' (caixa), chuta ele de volta para a tela de vendas!
+  // Se for caixa (ou não tiver login), chuta de volta para a tela de vendas
   return <Navigate to="/pos" replace />;
 };
-// ------------------------------------------------------------------
+// ------------------------------
 
 function App() {
   return (
@@ -43,7 +42,7 @@ function App() {
         <Route path="/pos" element={<POS />} />
         <Route path="/cashgive" element={<CashGive />} />
 
-        {/* Rotas do Admin (PROTEGIDAS PELA BARREIRA) */}
+        {/* Rotas do Admin (PROTEGIDAS) */}
         <Route path="/admin" element={
           <RotaProtegidaAdmin>
             <AdminLayout />

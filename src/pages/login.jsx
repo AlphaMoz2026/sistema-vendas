@@ -7,21 +7,23 @@ export default function Login() {
     const [password, setPassword] = useState('');
     const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
-    const { login } = useAuth(); // Pega apenas a função de login
+    const { login } = useAuth();
 
     const handleLogin = async (e) => {
         e.preventDefault();
         setLoading(true);
 
         try {
-            // O login agora devolve o cargo (supervisor, cashier, etc) diretamente
-            const cargo = await login(email, password);
+            await login(email, password);
 
-            // Redireciona imediatamente com base no cargo
-            if (cargo === 'admin' || cargo === 'supervisor' || cargo === 'manager') {
+            // LÓGICA INFALÍVEL:
+            // Se o que foi digitado tem "@", é o e-mail do supervisor
+            if (email.includes('@')) {
                 navigate('/admin');
-            } else {
-                navigate('/pos'); // Manda o caixa para a tela de vendas
+            }
+            // Se não tem "@" (só números), é o login do caixa
+            else {
+                navigate('/pos');
             }
 
         } catch (err) {

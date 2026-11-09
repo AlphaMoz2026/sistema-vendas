@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { authClient } from '../lib/auth-client'; // Importa o cliente de autenticação
 import { sql } from '../lib/db';
 import { Bell, X, Check } from 'lucide-react';
 
@@ -6,27 +7,48 @@ export default function Notificacoes() {
     const [notificacoes, setNotificacoes] = useState([]);
     const [aberto, setAberto] = useState(false);
 
-    // Busca as notificações não lidas
     const fetchNotificacoes = async () => {
         try {
-            const result = await sql`SELECT * FROM notifications WHERE is_read = false ORDER BY created_at DESC`;
-            setNotificacoes(result);
+            // 1. Verifica quem está logado
+            const session = await authClient.getSession();
+            const user = session?.data?.user;
+
+            if (!user) return; // Se não houver ninguém logado, não faz nada
+
+            // 2. Verifica no banco de dados qual é o cargo desse utilizador
+            const checkRole = await sql`SELECT role FROM profiles WHERE id = ${user.id}`;
+            const role = checkRole[0]?.role;
+
+            // 3. Se for supervisor (ou admin/manager), busca as notificações
+            if (role === 'supervisor' || role === 'admin' || role === 'manager') {
+                const result = await sql`
+          SELECT * FROM notifications 
+          WHERE is_read = false 
+          ORDER BY created_at DESC
+        `;
+                setNotificacoes(result);
+            } else {
+                // Se for caixa, o sino dele fica vazio
+                setNotificacoes([]);
+            }
+
         } catch (error) {
             console.error("Erro ao buscar notificações:", error);
         }
     };
 
-    // Atualiza automaticamente a cada 10 segundos
+    // Atualiza a cada 10 segundos para ver se chegou algo novo
     useEffect(() => {
         fetchNotificacoes();
         const interval = setInterval(fetchNotificacoes, 10000);
         return () => clearInterval(interval);
     }, []);
 
-    // Marca como lida e remove da lista
+    // Função para marcar como lida
     const marcarComoLida = async (id) => {
         try {
             await sql`UPDATE notifications SET is_read = true WHERE id = ${id}`;
+            // Remove a notificação da tela imediatamente
             setNotificacoes(notificacoes.filter(n => n.id !== id));
         } catch (error) {
             alert("Erro ao marcar como lida.");
@@ -48,7 +70,7 @@ export default function Notificacoes() {
                 )}
             </button>
 
-            {/* Painel que abre ao clicar */}
+            {/* Painel que abre ao clicar no sino */}
             {aberto && (
                 <div className="absolute right-0 mt-2 w-80 md:w-96 bg-white rounded-lg shadow-xl border border-gray-200 z-50">
                     <div className="p-4 border-b border-gray-100 flex justify-between items-center bg-gray-50 rounded-t-lg">
